@@ -1,0 +1,12 @@
+{
+  "name": "PuroFarms dMRV",
+  "description": "Digital Monitoring, Reporting and Verification app for artisanal Kon-Tiki biochar production. Farmer and Field Operator app.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

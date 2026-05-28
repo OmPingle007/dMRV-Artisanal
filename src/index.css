@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "DM Mono", ui-monospace, SFMono-Regular, monospace;
+  --color-geo-bg: #f0f4f1;
+  --color-geo-text: #1a2f23;
+  --color-geo-dark: #1b4332;
+  --color-geo-mid: #40916c;
+  --color-geo-border: #d8e3dc;
+  --color-geo-border-light: #e2e8e4;
+  --color-geo-input: #f8faf7;
+}
+
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .pl-safe {
+    padding-left: env(safe-area-inset-left);
+  }
+  .pr-safe {
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
