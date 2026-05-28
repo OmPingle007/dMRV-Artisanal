@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { ChevronLeft, Camera, Video, AlertCircle, ArrowRight, Lock, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, Camera, Video, AlertCircle, ArrowRight, Lock, CheckCircle2, RefreshCw } from 'lucide-react';
 import { CameraCapture } from '../components/CameraCapture';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 interface BatchWizardProps {
   batchId: string | null;
@@ -12,17 +13,45 @@ export function BatchWizard({ batchId, onBack }: BatchWizardProps) {
   const { user } = useAuth();
   const [currentStepId, setCurrentStepId] = useState<string | null>(batchId ? 'PROGRESS' : 'S0');
   const [showCamera, setShowCamera] = useState<{ type: 'photo' | 'video', text: string, minDuration?: number } | null>(null);
+  const [loading, setLoading] = useState(false);
 
   // Mock State for the batch
   const [batchState, setBatchState] = useState({
     id: batchId || '',
-    farm: 'Farm 1 (Survey 42)',
+    farm: 'Farm 1',
     kiln: 'KT-300L',
     feedstock: 'Cotton Stalk',
     stepsCompleted: batchId ? ['S0'] : [] as string[],
     moisture: null as number | null,
     weight: null as number | null,
   });
+
+  useEffect(() => {
+    if (batchId && isSupabaseConfigured() && supabase) {
+      fetchBatchDetails(batchId);
+    }
+  }, [batchId]);
+
+  const fetchBatchDetails = async (id: string) => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.from('batches').select('*').eq('batch_id', id).single();
+      if (!error && data) {
+        setBatchState(s => ({
+          ...s,
+          id: data.batch_id,
+          farm: data.farmer || 'Farm 1',
+          kiln: data.kiln || 'KT-300L',
+          feedstock: data.feedstock || 'Cotton Stalk',
+          stepsCompleted: data.steps_completed || ['S0']
+        }));
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const steps = [
     { id: 'S1', title: 'Feedstock Moisture', req: '3x Readings' },
@@ -37,15 +66,62 @@ export function BatchWizard({ batchId, onBack }: BatchWizardProps) {
   ];
 
   // --- Handlers ---
-  const handleS0Submit = (e: React.FormEvent) => {
+  const handleS0Submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newId = `KT300-F1-CS-${new Date().toISOString().replace(/\D/g, '').slice(0,12)}`;
-    setBatchState(s => ({ ...s, id: newId, stepsCompleted: ['S0'] }));
+    const newId = `KT300-F1-CS-${new Date().toISOString().replace(/\\D/g, '').slice(0,12)}`;
+    const newSteps = ['S0'];
+    
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        setLoading(true);
+        const { error } = await supabase.from('batches').insert({
+          batch_id: newId,
+          user_id: user?.id,
+          farmer: batchState.farm,
+          kiln: batchState.kiln,
+          feedstock: batchState.feedstock,
+          status: 'IN_PROGRESS',
+          step: 'S1',
+          age: 'Just started',
+          steps_completed: newSteps
+        });
+        if (error) console.error("Could not save batch:", error);
+      } catch (err) {
+        console.error("Batch insert failed:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    setBatchState(s => ({ ...s, id: newId, stepsCompleted: newSteps }));
     setCurrentStepId('PROGRESS');
   };
 
-  const markStepComplete = (id: string) => {
-    setBatchState(s => ({ ...s, stepsCompleted: [...s.stepsCompleted, id] }));
+  const markStepComplete = async (id: string) => {
+    const updatedSteps = [...batchState.stepsCompleted, id];
+    let nextStep = 'DONE';
+    const currentIdx = steps.findIndex(s => s.id === id);
+    if (currentIdx >= 0 && currentIdx < steps.length - 1) {
+       nextStep = steps[currentIdx + 1].id;
+    }
+
+    if (isSupabaseConfigured() && supabase && batchState.id) {
+       try {
+         setLoading(true);
+         const { error } = await supabase.from('batches').update({
+           steps_completed: updatedSteps,
+           step: nextStep,
+           status: nextStep === 'DONE' ? 'COMPLETED' : 'IN_PROGRESS'
+         }).eq('batch_id', batchState.id);
+         if (error) console.error("Could not update batch:", error);
+       } catch (err) {
+         console.error("Batch update failed:", err);
+       } finally {
+         setLoading(false);
+       }
+    }
+
+    setBatchState(s => ({ ...s, stepsCompleted: updatedSteps }));
     setCurrentStepId('PROGRESS');
   };
 

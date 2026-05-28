@@ -1,15 +1,41 @@
+import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { TopBar } from '../components/TopBar';
-import { Search, Filter, ShieldCheck, Clock, FileWarning } from 'lucide-react';
+import { Search, Filter, ShieldCheck, Clock, FileWarning, RefreshCw } from 'lucide-react';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { cn } from '../lib/utils';
 
 export function Batches({ onOpenBatch }: { onOpenBatch: (id: string) => void }) {
+  const { user } = useAuth();
+  const [batches, setBatches] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const batches = [
-    { id: 'KT300-FP1-CS-20260528', farmer: 'Ramesh Patil', status: 'IN_PROGRESS', date: 'Today', tco2e: '-', flag: false },
-    { id: 'KT300-FP1-CS-20260520', farmer: 'Ramesh Patil', status: 'SAMPLE_SEALED', date: 'May 20', tco2e: '0.42', flag: false },
-    { id: 'KT300-FP1-WR-20260515', farmer: 'Ramesh Patil', status: 'APPROVED', date: 'May 15', tco2e: '0.38', flag: false },
-    { id: 'KT300-FP1-CS-20260510', farmer: 'Ramesh Patil', status: 'UNDER_REVIEW', date: 'May 10', tco2e: '0.45', flag: true },
-  ];
+  useEffect(() => {
+    fetchBatches();
+  }, [user]);
+
+  const fetchBatches = async () => {
+    if (isSupabaseConfigured() && supabase && user?.id) {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('batches')
+          .select('*')
+          .eq('user_id', user.id);
+          
+        if (data && !error) {
+          setBatches(data);
+        } else {
+          setBatches([]);
+        }
+      } catch (e) {
+        setBatches([]);
+      }
+      setLoading(false);
+    } else if (!isSupabaseConfigured()) {
+      setBatches([]);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -41,43 +67,53 @@ export function Batches({ onOpenBatch }: { onOpenBatch: (id: string) => void }) 
       </div>
 
       <div className="px-6 space-y-4">
-        {batches.map((batch) => {
-          const badge = getStatusBadge(batch.status);
-          
-          return (
-            <div 
-              key={batch.id} 
-              onClick={() => onOpenBatch(batch.id)}
-              className="bg-white p-5 border border-geo-border rounded-xl shadow-sm hover:border-geo-mid cursor-pointer transition-colors"
-            >
-              <div className="flex justify-between items-start mb-3">
-                <div className="flex-1 min-w-0 pr-4 mt-1">
-                  <h4 className="font-mono text-[10px] font-bold text-geo-dark truncate uppercase tracking-widest">{batch.id}</h4>
-                  <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">{batch.farmer}</p>
+        {loading ? (
+          <div className="bg-white p-5 border border-geo-border rounded-xl flex justify-center py-8">
+            <RefreshCw className="w-5 h-5 text-geo-mid animate-spin" />
+          </div>
+        ) : batches.length > 0 ? (
+          batches.map((batch) => {
+            const badge = getStatusBadge(batch.status);
+            
+            return (
+              <div 
+                key={batch.id} 
+                onClick={() => onOpenBatch(batch.id)}
+                className="bg-white p-5 border border-geo-border rounded-xl shadow-sm hover:border-geo-mid cursor-pointer transition-colors"
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex-1 min-w-0 pr-4 mt-1">
+                    <h4 className="font-mono text-[10px] font-bold text-geo-dark truncate uppercase tracking-widest">{batch.batch_id || batch.id}</h4>
+                    <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">{batch.farmer || 'Unknown Farmer'}</p>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="flex items-center justify-between mt-5 pt-4 border-t border-geo-input">
-                <div className="flex items-center gap-2 border-l-2 border-geo-dark pl-3">
-                  <p className="text-xl font-black text-geo-text leading-none">
-                    {batch.tco2e} 
-                    <span className="text-[10px] text-slate-400 font-normal uppercase tracking-widest ml-1 bg-geo-input px-1 py-0.5 rounded border border-geo-border-light">tCO₂</span>
-                  </p>
-                </div>
-                <div className="flex flex-col items-end gap-1.5">
-                  <span className="px-2 py-0.5 bg-geo-input text-slate-600 border border-geo-border-light rounded text-[8px] font-bold uppercase tracking-widest">
-                    {badge.label}
-                  </span>
-                  {batch.flag && (
-                    <span className="px-2 py-0.5 bg-[#fff1f0] text-[#cf1322] border border-[#ffccc7] rounded text-[8px] font-bold uppercase tracking-widest">
-                      FLAGGED
+                
+                <div className="flex items-center justify-between mt-5 pt-4 border-t border-geo-input">
+                  <div className="flex items-center gap-2 border-l-2 border-geo-dark pl-3">
+                    <p className="text-xl font-black text-geo-text leading-none">
+                      {batch.tco2e || '-'} 
+                      <span className="text-[10px] text-slate-400 font-normal uppercase tracking-widest ml-1 bg-geo-input px-1 py-0.5 rounded border border-geo-border-light">tCO₂</span>
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1.5">
+                    <span className="px-2 py-0.5 bg-geo-input text-slate-600 border border-geo-border-light rounded text-[8px] font-bold uppercase tracking-widest">
+                      {badge.label}
                     </span>
-                  )}
+                    {batch.flag && (
+                      <span className="px-2 py-0.5 bg-[#fff1f0] text-[#cf1322] border border-[#ffccc7] rounded text-[8px] font-bold uppercase tracking-widest">
+                        FLAGGED
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          )
-        })}
+            )
+          })
+        ) : (
+          <div className="bg-white p-5 border border-geo-border rounded-xl text-center">
+            <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">No Batches Found</p>
+          </div>
+        )}
       </div>
     </div>
   );

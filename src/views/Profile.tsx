@@ -19,8 +19,14 @@ export function Profile() {
     if (isSupabaseConfigured() && supabase && user?.id) {
       setLoadingFarms(true);
       try {
-        const { data } = await supabase.from('farms').select('*').eq('user_id', user.id);
-        if (data) {
+        const { data, error } = await supabase.from('farms').select('*').eq('user_id', user.id);
+        if (error) {
+          console.error("Supabase fetch error:", error);
+          const msg = error.code === 'PGRST205'
+            ? 'Tables are missing in Supabase! Please run the SQL commands from supabase_schema.sql in your Supabase SQL Editor.'
+            : `Could not fetch data: ${error.message}`;
+          alert(msg);
+        } else if (data) {
           setFarms(data);
         }
       } catch (e) {
@@ -64,11 +70,15 @@ export function Profile() {
         let file712Url = '';
         if (formData.file712) {
           const ext = formData.file712.name.split('.').pop() || 'pdf';
-          const { data: uploadData } = await supabase.storage.from('documents').upload(`712_${Date.now()}.${ext}`, formData.file712);
+          const { data: uploadData, error: uploadError } = await supabase.storage.from('documents').upload(`712_${Date.now()}.${ext}`, formData.file712);
+          if (uploadError) {
+             console.error("Storage upload error:", uploadError);
+             alert(`Could not upload document: ${uploadError.message}`);
+          }
           file712Url = uploadData?.path || '';
         }
 
-        await supabase.from('farms').insert({
+        const { error: dbError } = await supabase.from('farms').insert({
           user_id: user?.id,
           survey_no: formData.surveyNo,
           area: parseFloat(formData.area),
@@ -77,20 +87,19 @@ export function Profile() {
           document_712_url: file712Url,
           gps_location: formData.gpsLocation
         });
-        await fetchFarms();
+        
+        if (dbError) {
+           console.error("Supabase insert error:", dbError);
+           alert(`Database error: ${dbError.message}`);
+        } else {
+           await fetchFarms();
+        }
       } catch (error) {
         console.error("Failed to add farm", error);
       }
     } else {
-      // Mock flow
-      await new Promise(res => setTimeout(res, 800));
-      setFarms([...farms, {
-        id: Date.now(),
-        survey_no: formData.surveyNo,
-        area: formData.area,
-        area_unit: formData.areaUnit,
-        primary_crop: formData.crop
-      }]);
+      // Mock flow disabled
+      alert("Supabase not configured, cannot save farm.");
     }
     setIsSubmitting(false);
     setAddingFarm(false);

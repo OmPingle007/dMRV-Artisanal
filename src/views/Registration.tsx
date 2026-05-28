@@ -38,7 +38,7 @@ export function Registration({ onComplete }: { onComplete: () => void }) {
       if (isSupabaseConfigured() && supabase) {
         try {
           // Upsert Farmer Profile
-          const { data: userRow } = await supabase.from('users').upsert({
+          const { data: userRow, error: upsertErr } = await supabase.from('users').upsert({
             id: user?.id,
             mobile: user?.mobile,
             name: formData.name,
@@ -48,6 +48,16 @@ export function Registration({ onComplete }: { onComplete: () => void }) {
             district: formData.district,
             aadhaar_last4: formData.aadhaar.slice(-4),
           }).select().single();
+          
+          if (upsertErr) {
+            console.error("User upsert error:", upsertErr);
+            const msg = upsertErr.code === 'PGRST205'
+              ? 'Tables are missing in Supabase! Please run the SQL commands from supabase_schema.sql in your Supabase SQL Editor.'
+              : `User save failed: ${upsertErr.message}`;
+            alert(msg);
+            setIsSubmitting(false);
+            return;
+          }
 
           const userId = userRow?.id || user?.id;
 
@@ -55,19 +65,21 @@ export function Registration({ onComplete }: { onComplete: () => void }) {
           let nocUrl = '';
           if (formData.fileNOC) {
             const ext = formData.fileNOC.name.split('.').pop() || 'pdf';
-            const { data: uploadData } = await supabase.storage.from('documents').upload(`noc_${Date.now()}.${ext}`, formData.fileNOC);
+            const { data: uploadData, error: nocErr } = await supabase.storage.from('documents').upload(`noc_${Date.now()}.${ext}`, formData.fileNOC);
+            if (nocErr) alert(`NOC Upload error: ${nocErr.message}`);
             nocUrl = uploadData?.path || '';
           }
 
           let file712Url = '';
           if (formData.file712) {
             const ext = formData.file712.name.split('.').pop() || 'pdf';
-            const { data: uploadData } = await supabase.storage.from('documents').upload(`712_${Date.now()}.${ext}`, formData.file712);
+            const { data: uploadData, error: file712Err } = await supabase.storage.from('documents').upload(`712_${Date.now()}.${ext}`, formData.file712);
+            if (file712Err) alert(`7/12 Upload error: ${file712Err.message}`);
             file712Url = uploadData?.path || '';
           }
 
           // Insert Farm
-          await supabase.from('farms').insert({
+          const { error: insertErr } = await supabase.from('farms').insert({
             user_id: userId,
             survey_no: formData.surveyNo,
             area: parseFloat(formData.area),
@@ -77,8 +89,18 @@ export function Registration({ onComplete }: { onComplete: () => void }) {
             document_712_url: file712Url,
             gps_location: formData.gpsLocation
           });
+          
+          if (insertErr) {
+            console.error("Farm insert error", insertErr);
+            alert(`Farm save failed: ${insertErr.message}`);
+            setIsSubmitting(false);
+            return;
+          }
         } catch (error) {
           console.error("Supabase error during registration", error);
+          alert("Unexpected error during registration.");
+          setIsSubmitting(false);
+          return;
         }
       } else {
         // Fallback delay if no db

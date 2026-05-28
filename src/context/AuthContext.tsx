@@ -50,16 +50,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     if (!matchedUser) {
-      // Mock / fallback
-      matchedUser = {
-        id: `usr-${Date.now()}`,
-        name: role === 'Farmer' ? 'New Farmer' : 'Rahul Sharma (Field Officer)',
-        role: role,
-        mobile: phone,
-      };
-      // For fallback check local registry for the same phone
-      if (localStorage.getItem(`registered_${phone}`)) {
-        registered = true;
+      if (isSupabaseConfigured() && supabase) {
+        matchedUser = {
+          id: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : '123e4567-e89b-12d3-a456-426614174000',
+          name: '',
+          role: role,
+          mobile: phone,
+        };
+      } else {
+        // Mock / fallback
+        matchedUser = {
+          id: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : '123e4567-e89b-12d3-a456-426614174000',
+          name: role === 'Farmer' ? 'New Farmer' : 'Rahul Sharma (Field Officer)',
+          role: role,
+          mobile: phone,
+        };
+        // For fallback check local registry for the same phone
+        if (localStorage.getItem(`registered_${phone}`)) {
+          registered = true;
+        }
       }
     }
 
