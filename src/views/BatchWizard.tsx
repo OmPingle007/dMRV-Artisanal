@@ -14,6 +14,9 @@ export function BatchWizard({ batchId, onBack }: BatchWizardProps) {
   const [currentStepId, setCurrentStepId] = useState<string | null>(batchId ? 'PROGRESS' : 'S0');
   const [showCamera, setShowCamera] = useState<{ type: 'photo' | 'video', text: string, minDuration?: number } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [capturedMedia, setCapturedMedia] = useState<Record<string, boolean>>({});
+  const [inUseKilns, setInUseKilns] = useState<string[]>([]);
+  const [farms, setFarms] = useState<any[]>([]);
 
   // Mock State for the batch
   const [batchState, setBatchState] = useState({
@@ -29,8 +32,37 @@ export function BatchWizard({ batchId, onBack }: BatchWizardProps) {
   useEffect(() => {
     if (batchId && isSupabaseConfigured() && supabase) {
       fetchBatchDetails(batchId);
+    } else {
+      fetchInUseKilns();
+      fetchFarms();
     }
-  }, [batchId]);
+  }, [batchId, user]);
+
+  const fetchFarms = async () => {
+    if (isSupabaseConfigured() && supabase && user?.id) {
+       try {
+         const { data } = await supabase.from('farms').select('*').eq('user_id', user.id);
+         if (data && data.length > 0) {
+            setFarms(data);
+            setBatchState(s => ({ ...s, farm: `Survey ${data[0].survey_no} - ${data[0].primary_crop}` }));
+         }
+       } catch (e) {
+         // handle
+       }
+    }
+  };
+
+  const fetchInUseKilns = async () => {
+    if (!isSupabaseConfigured() || !supabase) return;
+    try {
+      const { data } = await supabase.from('batches').select('kiln').in('status', ['IN_PROGRESS', 'WAIT_TEMP']);
+      if (data) {
+        setInUseKilns(data.map(d => d.kiln).filter(Boolean));
+      }
+    } catch {
+      // safe fallback
+    }
+  };
 
   const fetchBatchDetails = async (id: string) => {
     try {
@@ -68,7 +100,11 @@ export function BatchWizard({ batchId, onBack }: BatchWizardProps) {
   // --- Handlers ---
   const handleS0Submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newId = `KT300-F1-CS-${new Date().toISOString().replace(/\\D/g, '').slice(0,12)}`;
+    if (!capturedMedia['S0']) {
+      alert("You must capture horizontal 360 video evidence of the kiln before starting.");
+      return;
+    }
+    const newId = `BATCH-${Date.now().toString().slice(-6)}-${Math.floor(Math.random()*1000)}`;
     const newSteps = ['S0'];
     
     if (isSupabaseConfigured() && supabase) {
@@ -98,6 +134,10 @@ export function BatchWizard({ batchId, onBack }: BatchWizardProps) {
   };
 
   const markStepComplete = async (id: string) => {
+    if (!capturedMedia[id]) {
+      alert("You must capture and upload evidence for this step before proceeding.");
+      return;
+    }
     const updatedSteps = [...batchState.stepsCompleted, id];
     let nextStep = 'DONE';
     const currentIdx = steps.findIndex(s => s.id === id);
@@ -134,7 +174,7 @@ export function BatchWizard({ batchId, onBack }: BatchWizardProps) {
         minVideoDuration={showCamera.minDuration}
         onCancel={() => setShowCamera(null)}
         onCapture={(f) => {
-          console.log("Captured", f);
+          setCapturedMedia(prev => ({ ...prev, [currentStepId || 'S0']: true }));
           setShowCamera(null);
         }}
       />
@@ -167,19 +207,46 @@ export function BatchWizard({ batchId, onBack }: BatchWizardProps) {
             <div className="bg-white p-5 rounded-xl border border-geo-border space-y-5">
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Registered Farm</label>
-                <select className="w-full bg-geo-input border border-geo-border-light rounded-lg p-4 text-xs font-bold uppercase tracking-widest focus:ring-1 focus:ring-geo-dark outline-none text-geo-text">
-                  <option>Farm 1 (Survey 42) - Cotton</option>
+                <select 
+                   value={batchState.farm}
+                   onChange={e => setBatchState(s => ({ ...s, farm: e.target.value }))}
+                   className="w-full bg-geo-input border border-geo-border-light rounded-lg p-4 text-xs font-bold uppercase tracking-widest focus:ring-1 focus:ring-geo-dark outline-none text-geo-text"
+                >
+                  {farms.length > 0 ? (
+                    farms.map((farm: any) => (
+                      <option key={farm.id} value={`Survey ${farm.survey_no} - ${farm.primary_crop}`}>
+                        {`Survey ${farm.survey_no} - ${farm.primary_crop}`}
+                      </option>
+                    ))
+                  ) : (
+                    <option>Farm 1 (Survey 42) - Cotton</option>
+                  )}
                 </select>
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Kiln ID</label>
-                <select className="w-full bg-geo-input border border-geo-border-light rounded-lg p-4 text-xs font-bold uppercase tracking-widest focus:ring-1 focus:ring-geo-dark outline-none text-geo-text">
-                  <option>KT-300L (Available)</option>
+                <select 
+                   value={batchState.kiln}
+                   onChange={e => setBatchState(s => ({ ...s, kiln: e.target.value }))}
+                   className="w-full bg-geo-input border border-geo-border-light rounded-lg p-4 text-xs font-bold uppercase tracking-widest focus:ring-1 focus:ring-geo-dark outline-none text-geo-text"
+                >
+                  {['KT-100L', 'KT-200L', 'KT-300L', 'KT-500L'].map(k => {
+                    const inUse = inUseKilns.includes(k);
+                    return (
+                      <option key={k} value={k} disabled={inUse}>
+                        {k} {inUse ? '(In Progress)' : '(Available)'}
+                      </option>
+                    )
+                  })}
                 </select>
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Feedstock Type</label>
-                <select className="w-full bg-geo-input border border-geo-border-light rounded-lg p-4 text-xs font-bold uppercase tracking-widest focus:ring-1 focus:ring-geo-dark outline-none text-geo-text">
+                <select 
+                   value={batchState.feedstock}
+                   onChange={e => setBatchState(s => ({ ...s, feedstock: e.target.value }))}
+                   className="w-full bg-geo-input border border-geo-border-light rounded-lg p-4 text-xs font-bold uppercase tracking-widest focus:ring-1 focus:ring-geo-dark outline-none text-geo-text"
+                >
                   <option>Cotton Stalk</option>
                   <option>Soybean Straw</option>
                 </select>
@@ -191,14 +258,19 @@ export function BatchWizard({ batchId, onBack }: BatchWizardProps) {
               <button 
                 type="button" 
                 onClick={() => setShowCamera({ type: 'video', text: 'Record 360° video of the empty kiln', minDuration: 15 })}
-                className="w-full border border-dashed border-slate-300 bg-slate-50 hover:bg-white transition-colors p-6 rounded-lg flex flex-col items-center justify-center gap-3 text-geo-dark"
+                disabled={capturedMedia['S0']}
+                className={`w-full border border-dashed p-6 rounded-lg flex flex-col items-center justify-center gap-3 transition-colors ${
+                  capturedMedia['S0'] 
+                    ? 'border-green-500 bg-green-50 text-green-700' 
+                    : 'border-slate-300 bg-slate-50 hover:bg-white text-geo-dark'
+                }`}
               >
-                <div className="w-12 h-12 rounded-full bg-geo-mid flex items-center justify-center">
-                  <Video className="w-6 h-6 text-white" />
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${capturedMedia['S0'] ? 'bg-green-500' : 'bg-geo-mid'}`}>
+                  {capturedMedia['S0'] ? <CheckCircle2 className="w-6 h-6 text-white" /> : <Video className="w-6 h-6 text-white" />}
                 </div>
                 <div className="text-center">
-                  <p className="font-bold text-xs uppercase tracking-widest">Capture Video</p>
-                  <p className="text-[10px] mt-1 opacity-70 font-mono tracking-tighter uppercase">Min 15s • Geo-Locked</p>
+                  <p className="font-bold text-xs uppercase tracking-widest">{capturedMedia['S0'] ? 'Video Captured' : 'Capture Video'}</p>
+                  <p className={`text-[10px] mt-1 uppercase font-mono tracking-tighter opacity-70`}>Min 15s • Geo-Locked</p>
                 </div>
               </button>
             </div>
@@ -275,14 +347,19 @@ export function BatchWizard({ batchId, onBack }: BatchWizardProps) {
             <button 
                 type="button" 
                 onClick={() => setShowCamera({ type: 'photo', text: 'Ensure details are visible in frame' })}
-                className="w-full border border-dashed border-slate-300 bg-slate-50 hover:bg-white transition-colors p-8 rounded-lg flex flex-col items-center justify-center gap-4 text-geo-dark mb-8"
+                disabled={capturedMedia[currentStepId]}
+                className={`w-full border border-dashed p-8 rounded-lg flex flex-col items-center justify-center gap-4 mb-8 transition-colors ${
+                  capturedMedia[currentStepId] 
+                    ? 'border-green-500 bg-green-50 text-green-700' 
+                    : 'border-slate-300 bg-slate-50 hover:bg-white text-geo-dark'
+                }`}
               >
-                <div className="w-16 h-16 rounded-full bg-geo-dark flex items-center justify-center shadow-sm">
-                  <Camera className="w-8 h-8 text-white" />
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center shadow-sm ${capturedMedia[currentStepId] ? 'bg-green-500' : 'bg-geo-dark'}`}>
+                  {capturedMedia[currentStepId] ? <CheckCircle2 className="w-8 h-8 text-white" /> : <Camera className="w-8 h-8 text-white" />}
                 </div>
                 <div className="text-center">
-                  <p className="font-bold text-xs uppercase tracking-widest">Capture Evidence</p>
-                  <p className="text-[10px] mt-1 text-slate-400 uppercase font-mono tracking-tighter">Live Camera Only</p>
+                  <p className="font-bold text-xs uppercase tracking-widest">{capturedMedia[currentStepId] ? 'Evidence Captured' : 'Capture Evidence'}</p>
+                  <p className={`text-[10px] mt-1 uppercase font-mono tracking-tighter ${capturedMedia[currentStepId] ? 'text-green-600' : 'text-slate-400'}`}>Live Camera Only</p>
                 </div>
             </button>
 
