@@ -198,7 +198,13 @@ export function BatchWizard({ batchId, onBack }: BatchWizardProps) {
             media: capturedMedia,
           })
           .eq("batch_id", batchState.id);
-        if (error) console.error("Could not update batch:", error);
+        if (error) {
+          console.error("Could not update batch:", error);
+          alert(
+            "Failed to update batch. Please ensure all DB columns exist: " +
+              error.message,
+          );
+        }
       } catch (err) {
         console.error("Batch update failed:", err);
       } finally {
@@ -340,13 +346,23 @@ export function BatchWizard({ batchId, onBack }: BatchWizardProps) {
                   <option value="Sunflower stalks">Sunflower stalks</option>
                   <option value="Coconut shells">Coconut shells</option>
                   <option value="Palm kernel shells">Palm kernel shells</option>
-                  <option value="Palm empty fruit bunches (EFB)">Palm empty fruit bunches (EFB)</option>
+                  <option value="Palm empty fruit bunches (EFB)">
+                    Palm empty fruit bunches (EFB)
+                  </option>
                   <option value="Cashew shells">Cashew shells</option>
                   <option value="Almond shells">Almond shells</option>
-                  <option value="Coffee husks/parchment">Coffee husks/parchment</option>
-                  <option value="Bagasse (sugarcane residue)">Bagasse (sugarcane residue)</option>
-                  <option value="Vine prunings (grape/wine industry)">Vine prunings (grape/wine industry)</option>
-                  <option value="Fruit orchard prunings">Fruit orchard prunings</option>
+                  <option value="Coffee husks/parchment">
+                    Coffee husks/parchment
+                  </option>
+                  <option value="Bagasse (sugarcane residue)">
+                    Bagasse (sugarcane residue)
+                  </option>
+                  <option value="Vine prunings (grape/wine industry)">
+                    Vine prunings (grape/wine industry)
+                  </option>
+                  <option value="Fruit orchard prunings">
+                    Fruit orchard prunings
+                  </option>
                 </select>
               </div>
             </div>
