@@ -3,11 +3,11 @@ import { useAuth } from '../context/AuthContext';
 import { Flame, Shield, ArrowRight } from 'lucide-react';
 import { Role } from '../types';
 
-export function Login() {
+export function Login({ preSelectedRole, onBack }: { preSelectedRole?: Role, onBack: () => void }) {
   const { login } = useAuth();
   const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [role, setRole] = useState<Role>('Farmer');
+  const [role, setRole] = useState<Role>(preSelectedRole && preSelectedRole !== 'Farmer' && preSelectedRole !== 'FieldOfficer' ? preSelectedRole : 'Farmer');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,51 +20,70 @@ export function Login() {
     }, 800);
   };
 
+  const getTheme = () => {
+    switch (role) {
+      case 'Auditor': return 'text-[#1E40AF] border-[#1E40AF] bg-[#1E40AF]';
+      case 'LabTechnician': return 'text-[#6B21A8] border-[#6B21A8] bg-[#6B21A8]';
+      default: return 'text-geo-dark border-geo-dark bg-geo-dark';
+    }
+  };
+
+  const getHexColor = () => {
+    switch (role) {
+      case 'Auditor': return '#1E40AF';
+      case 'LabTechnician': return '#6B21A8';
+      default: return '#143225';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-geo-bg text-geo-text flex flex-col justify-center max-w-md mx-auto shadow-sm border-x border-geo-border">
-      <div className="px-6 py-8 flex flex-col items-center">
-        <div className="w-16 h-16 bg-geo-mid text-white rounded-lg flex items-center justify-center font-bold text-2xl mb-6 shadow-sm uppercase tracking-widest">
-          PF
+      <div className="px-6 py-8 flex flex-col items-center relative">
+        <button onClick={onBack} className="absolute top-8 left-6 text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-geo-text">&larr; Back</button>
+        <div className={`w-16 h-16 text-white rounded-lg flex items-center justify-center font-bold text-2xl mb-6 shadow-sm uppercase tracking-widest ${getTheme().split(' ')[2]}`}>
+          {role === 'Auditor' ? 'VVB' : role === 'LabTechnician' ? 'LAB' : 'PF'}
         </div>
         <h1 className="text-sm font-bold text-geo-dark uppercase tracking-[0.2em] mb-1">PuroFarms dMRV</h1>
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-8 text-center max-w-[280px]">
-          Field Operator App
+          {role === 'Management' ? 'Management Dashboard' : role === 'Auditor' ? 'Auditor Dashboard' : role === 'LabTechnician' ? 'Lab Portal' : 'Field Operator App'}
         </p>
 
         <form onSubmit={handleSubmit} className="w-full bg-white p-8 rounded-xl shadow-sm border border-geo-border">
-          <div className="mb-6">
-            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
-              Select Role
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setRole('Farmer')}
-                className={`py-3 px-3 rounded-lg border text-[10px] font-bold uppercase tracking-widest transition-all ${
-                  role === 'Farmer' 
-                    ? 'border-geo-dark bg-geo-dark text-white' 
-                    : 'border-geo-border-light text-slate-400 bg-geo-input hover:bg-white'
-                }`}
-              >
-                Farmer
-              </button>
-              <button
-                type="button"
-                onClick={() => setRole('FieldOfficer')}
-                className={`py-3 px-3 rounded-lg border text-[10px] font-bold uppercase tracking-widest transition-all ${
-                  role === 'FieldOfficer' 
-                    ? 'border-geo-dark bg-geo-dark text-white' 
-                    : 'border-geo-border-light text-slate-400 bg-geo-input hover:bg-white'
-                }`}
-              >
-                Field Officer
-              </button>
+          {(preSelectedRole === 'Farmer' || preSelectedRole === 'FieldOfficer' || !preSelectedRole) && (
+            <div className="mb-6">
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+                Select Role
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setRole('Farmer')}
+                  className={`py-3 px-3 rounded-lg border text-[10px] font-bold uppercase tracking-widest transition-all ${
+                    role === 'Farmer' 
+                      ? 'border-geo-dark bg-geo-dark text-white' 
+                      : 'border-geo-border-light text-slate-400 bg-geo-input hover:bg-white'
+                  }`}
+                >
+                  Farmer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRole('FieldOfficer')}
+                  className={`py-3 px-3 rounded-lg border text-[10px] font-bold uppercase tracking-widest transition-all ${
+                    role === 'FieldOfficer' 
+                      ? 'border-geo-dark bg-geo-dark text-white' 
+                      : 'border-geo-border-light text-slate-400 bg-geo-input hover:bg-white'
+                  }`}
+                >
+                  Field Officer
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="mb-6">
             <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
-              Mobile Number
+              Mobile Number / Login ID
             </label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-sm">+91</span>
@@ -83,7 +102,8 @@ export function Login() {
           <button
             type="submit"
             disabled={phone.length !== 10 || isLoading}
-            className="w-full bg-geo-dark text-white font-bold py-4 rounded-lg uppercase tracking-widest text-sm hover:bg-[#143225] transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+            style={{ backgroundColor: phone.length !== 10 || isLoading ? undefined : getHexColor() }}
+            className={`w-full text-white font-bold py-4 rounded-lg uppercase tracking-widest text-sm transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm ${getTheme().split(' ')[2]}`}
           >
             {isLoading ? (
               <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
