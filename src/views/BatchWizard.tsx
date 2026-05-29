@@ -107,6 +107,7 @@ export function BatchWizard({ batchId, onBack }: BatchWizardProps) {
           feedstock: data.feedstock || "Cotton stalks",
           stepsCompleted: data.steps_completed || ["S0"],
         }));
+        if (data.media) setCapturedMedia(data.media);
       }
     } catch (e) {
       console.error(e);

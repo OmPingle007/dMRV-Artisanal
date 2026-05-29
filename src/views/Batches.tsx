@@ -77,8 +77,8 @@ export function Batches({ onOpenBatch }: { onOpenBatch: (id: string) => void }) 
             
             return (
               <div 
-                key={batch.id} 
-                onClick={() => onOpenBatch(batch.id)}
+                key={batch.batch_id || batch.id} 
+                onClick={() => onOpenBatch(batch.batch_id || batch.id)}
                 className="bg-white p-5 border border-geo-border rounded-xl shadow-sm hover:border-geo-mid cursor-pointer transition-colors"
               >
                 <div className="flex justify-between items-start mb-3">

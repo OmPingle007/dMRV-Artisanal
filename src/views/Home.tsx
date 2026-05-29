@@ -105,7 +105,7 @@ export function Home({ onStartBatch, onOpenBatch }: { onStartBatch: () => void, 
             activeBatches.map(batch => (
               <div 
                 key={batch.id} 
-                onClick={() => onOpenBatch(batch.id)}
+                onClick={() => onOpenBatch(batch.batch_id || batch.id)}
                 className="bg-white p-5 border border-geo-border rounded-xl shadow-sm hover:border-geo-mid transition-colors cursor-pointer relative overflow-hidden"
               >
                 <div className="absolute top-0 right-0 p-3">
