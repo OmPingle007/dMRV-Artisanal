@@ -154,9 +154,15 @@ export function BatchWizard({ batchId, onBack }: BatchWizardProps) {
           steps_completed: newSteps,
           media: capturedMedia,
         });
-        if (error) console.error("Could not save batch:", error);
-      } catch (err) {
+        if (error) {
+          console.error("Could not save batch:", error);
+          alert("Failed to create batch: " + error.message);
+        } else {
+          alert("Batch created successfully");
+        }
+      } catch (err: any) {
         console.error("Batch insert failed:", err);
+        alert("Batch insert Exception: " + err.message);
       } finally {
         setLoading(false);
       }

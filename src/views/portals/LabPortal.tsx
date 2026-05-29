@@ -66,9 +66,15 @@ export function LabPortal() {
          const { error: uploadError } = await supabase.storage.from('evidence').upload(fileName, file);
          
          if (uploadError) {
-            console.warn("Storage upload failed (mocking success):", uploadError);
-            await new Promise(res => setTimeout(res, 1000));
-            uploadedUrl = `mock-url-${Date.now()}`;
+            console.warn("Storage upload failed, falling back to base64:", uploadError);
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            await new Promise((res) => {
+               reader.onloadend = () => {
+                  uploadedUrl = reader.result as string;
+                  res(null);
+               };
+            });
          } else {
             const { data } = supabase.storage.from('evidence').getPublicUrl(fileName);
             if (data) uploadedUrl = data.publicUrl;

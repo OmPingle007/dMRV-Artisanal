@@ -156,10 +156,16 @@ export function CameraCapture({
           .upload(fileName, preview.file);
         if (error) {
           console.warn(
-            "Supabase upload failed, this is expected if no configured bucket exists.",
+            "Supabase upload failed, falling back to base64 (bucket missing?)",
             error,
           );
-          await new Promise((res) => setTimeout(res, 1000));
+          const reader = new FileReader();
+          reader.readAsDataURL(preview.file);
+          reader.onloadend = () => {
+            onCapture(preview.file, reader.result as string);
+            setIsUploading(false);
+          };
+          return;
         } else {
           const { data } = supabase.storage
             .from("evidence")
@@ -170,11 +176,24 @@ export function CameraCapture({
         }
       } else {
         await new Promise((res) => setTimeout(res, 1500));
+        const reader = new FileReader();
+        reader.readAsDataURL(preview.file);
+        reader.onloadend = () => {
+          onCapture(preview.file, reader.result as string);
+          setIsUploading(false);
+        };
+        return;
       }
       onCapture(preview.file, uploadedUrl);
     } catch (e) {
       console.error(e);
-      onCapture(preview.file, uploadedUrl);
+      const reader = new FileReader();
+      reader.readAsDataURL(preview.file);
+      reader.onloadend = () => {
+        onCapture(preview.file, reader.result as string);
+        setIsUploading(false);
+      };
+      return;
     }
     setIsUploading(false);
   };
