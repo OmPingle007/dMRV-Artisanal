@@ -286,8 +286,8 @@ export function AuditorDashboard() {
                             </p>
                             <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-wider">
                               {batch.farmer || "Unknown"} •{" "}
-                              {batch.lat?.toFixed(2) || "-"} ,{" "}
-                              {batch.lng?.toFixed(2) || "-"}
+                              {batch.media?.lat ? batch.media.lat.toFixed(2) : "-"} ,{" "}
+                              {batch.media?.lng ? batch.media.lng.toFixed(2) : "-"}
                             </p>
                           </td>
                           <td className="py-4 px-6 pl-5">
@@ -512,11 +512,9 @@ export function AuditorDashboard() {
                                     <div className="flex items-center gap-1.5 opacity-90">
                                       <MapPin className="w-3 h-3 text-red-400" />
                                       <span className="text-[9px] font-mono font-bold">
-                                        {selectedBatch.lat?.toFixed(4) ||
-                                          "21.14"}
+                                        {selectedBatch.media?.[`${step}_lat`] ? selectedBatch.media[`${step}_lat`].toFixed(4) : (selectedBatch.media?.lat ? selectedBatch.media.lat.toFixed(4) : "21.14")}
                                         &deg;,{" "}
-                                        {selectedBatch.lng?.toFixed(4) ||
-                                          "79.08"}
+                                        {selectedBatch.media?.[`${step}_lng`] ? selectedBatch.media[`${step}_lng`].toFixed(4) : (selectedBatch.media?.lng ? selectedBatch.media.lng.toFixed(4) : "79.08")}
                                         &deg;
                                       </span>
                                     </div>

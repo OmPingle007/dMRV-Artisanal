@@ -204,16 +204,24 @@ export function ManagementDashboard() {
   const fetchMapData = async () => {
     if (!isSupabaseConfigured() || !supabase) return;
     try {
-      const { data, error } = await supabase.from("farms").select("*");
+      const { data, error } = await supabase.from("batches").select("*");
       if (data && !error && data.length > 0) {
-        const dynamicMap = data.map((farm: any) => ({
-          id: farm.id || farm.farm_id,
-          name: farm.name || "Registered Farm",
-          lat: farm.latitude || 21.1458 + (Math.random() - 0.5) * 0.1,
-          lng: farm.longitude || 79.0882 + (Math.random() - 0.5) * 0.1,
-          flags: 0,
-          status: "Active",
-        }));
+        const dynamicMap = data.map((batch: any) => {
+          let lat = 21.1458;
+          let lng = 79.0882;
+          if (batch.media && batch.media.lat) {
+            lat = batch.media.lat;
+            lng = batch.media.lng;
+          }
+          return {
+            id: batch.batch_id || batch.id,
+            name: batch.farmer || "Unknown Farmer",
+            lat,
+            lng,
+            flags: batch.flags || 0,
+            status: batch.flags >= 2 ? "Reject" : batch.flags === 1 ? "Warn" : "Active",
+          };
+        });
         setMapData(dynamicMap);
       }
     } catch (e) {
@@ -912,15 +920,13 @@ export function ManagementDashboard() {
                               <div className="flex justify-between text-xs font-bold text-geo-dark">
                                 <span>GPS LAT</span>
                                 <span className="font-mono">
-                                  {selectedBatch.lat ||
-                                    (21.0 + Math.random() * 0.1).toFixed(4)}
+                                  {selectedBatch.media?.[`${step}_lat`] ? selectedBatch.media[`${step}_lat`].toFixed(4) : (selectedBatch.media?.lat ? selectedBatch.media.lat.toFixed(4) : "-")}
                                 </span>
                               </div>
                               <div className="flex justify-between text-xs font-bold text-geo-dark">
                                 <span>GPS LNG</span>
                                 <span className="font-mono">
-                                  {selectedBatch.lng ||
-                                    (79.0 + Math.random() * 0.1).toFixed(4)}
+                                  {selectedBatch.media?.[`${step}_lng`] ? selectedBatch.media[`${step}_lng`].toFixed(4) : (selectedBatch.media?.lng ? selectedBatch.media.lng.toFixed(4) : "-")}
                                 </span>
                               </div>
                               <div className="flex justify-between text-xs font-bold text-geo-dark">

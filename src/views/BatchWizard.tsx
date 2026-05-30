@@ -225,10 +225,19 @@ export function BatchWizard({ batchId, onBack }: BatchWizardProps) {
         overlayText={showCamera.text}
         minVideoDuration={showCamera.minDuration}
         onCancel={() => setShowCamera(null)}
-        onCapture={(f, url) => {
-          setCapturedMedia((prev) => ({
+        onCapture={(f, url, loc) => {
+          setCapturedMedia((prev: any) => ({
             ...prev,
             [currentStepId || "S0"]: url || true,
+            ...(loc && currentStepId
+              ? {
+                  [`${currentStepId}_lat`]: loc.lat,
+                  [`${currentStepId}_lng`]: loc.lng,
+                  // Also set top-level lat/lng to the first captured (or latest) media
+                  lat: loc.lat,
+                  lng: loc.lng,
+                }
+              : {}),
           }));
           setShowCamera(null);
         }}

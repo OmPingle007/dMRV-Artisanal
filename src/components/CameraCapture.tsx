@@ -12,7 +12,7 @@ import {
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 
 interface CameraCaptureProps {
-  onCapture: (file: File, url?: string) => void;
+  onCapture: (file: File, url?: string, loc?: { lat: number; lng: number } | null) => void;
   onCancel: () => void;
   type: "photo" | "video";
   overlayText?: string;
@@ -41,6 +41,22 @@ export function CameraCapture({
   const [isUploading, setIsUploading] = useState(false);
   const [timestamp, setTimestamp] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [gpsLocation, setGpsLocation] = useState<{lat: number, lng: number} | null>(null);
+
+  useEffect(() => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setGpsLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => console.warn("Error getting GPS:", error),
+        { enableHighAccuracy: true }
+      );
+    }
+  }, []);
 
   useEffect(() => {
     setTimestamp(new Date().toLocaleString("en-US", { hour12: false }));
@@ -162,7 +178,7 @@ export function CameraCapture({
           const reader = new FileReader();
           reader.readAsDataURL(preview.file);
           reader.onloadend = () => {
-            onCapture(preview.file, reader.result as string);
+            onCapture(preview.file, reader.result as string, gpsLocation);
             setIsUploading(false);
           };
           return;
@@ -179,18 +195,18 @@ export function CameraCapture({
         const reader = new FileReader();
         reader.readAsDataURL(preview.file);
         reader.onloadend = () => {
-          onCapture(preview.file, reader.result as string);
+          onCapture(preview.file, reader.result as string, gpsLocation);
           setIsUploading(false);
         };
         return;
       }
-      onCapture(preview.file, uploadedUrl);
+      onCapture(preview.file, uploadedUrl, gpsLocation);
     } catch (e) {
       console.error(e);
       const reader = new FileReader();
       reader.readAsDataURL(preview.file);
       reader.onloadend = () => {
-        onCapture(preview.file, reader.result as string);
+        onCapture(preview.file, reader.result as string, gpsLocation);
         setIsUploading(false);
       };
       return;
@@ -233,8 +249,9 @@ export function CameraCapture({
             {/* GPS Overlay */}
             <div className="absolute bottom-4 left-4 right-4 bg-black/60 backdrop-blur-md p-3 rounded-lg border border-white/20 text-white font-mono text-[10px] gap-1 flex flex-col">
               <div className="flex items-center gap-2">
-                <MapPin className="w-3 h-3 text-geo-mid" /> LAT: 20.937 N, LON:
-                77.779 E
+                <MapPin className="w-3 h-3 text-geo-mid" /> LAT:{" "}
+                {gpsLocation ? gpsLocation.lat.toFixed(4) : "20.937 N"}, LON:{" "}
+                {gpsLocation ? gpsLocation.lng.toFixed(4) : "77.779 E"}
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="w-3 h-3 text-geo-mid" /> {timestamp}
