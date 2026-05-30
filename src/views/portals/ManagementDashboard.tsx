@@ -932,7 +932,7 @@ export function ManagementDashboard() {
                               <div className="flex justify-between text-xs font-bold text-geo-dark">
                                 <span>TIMESTAMP</span>
                                 <span className="font-mono">
-                                  {new Date().toISOString()}
+                                  {selectedBatch.media?.[`${step}_timestamp`] || selectedBatch.media?.timestamp || "-"}
                                 </span>
                               </div>
                             </div>

@@ -12,7 +12,7 @@ import {
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 
 interface CameraCaptureProps {
-  onCapture: (file: File, url?: string, loc?: { lat: number; lng: number } | null) => void;
+  onCapture: (file: File, url?: string, loc?: { lat: number; lng: number } | null, timestamp?: string) => void;
   onCancel: () => void;
   type: "photo" | "video";
   overlayText?: string;
@@ -178,7 +178,7 @@ export function CameraCapture({
           const reader = new FileReader();
           reader.readAsDataURL(preview.file);
           reader.onloadend = () => {
-            onCapture(preview.file, reader.result as string, gpsLocation);
+            onCapture(preview.file, reader.result as string, gpsLocation, timestamp);
             setIsUploading(false);
           };
           return;
@@ -195,18 +195,18 @@ export function CameraCapture({
         const reader = new FileReader();
         reader.readAsDataURL(preview.file);
         reader.onloadend = () => {
-          onCapture(preview.file, reader.result as string, gpsLocation);
+          onCapture(preview.file, reader.result as string, gpsLocation, timestamp);
           setIsUploading(false);
         };
         return;
       }
-      onCapture(preview.file, uploadedUrl, gpsLocation);
+      onCapture(preview.file, uploadedUrl, gpsLocation, timestamp);
     } catch (e) {
       console.error(e);
       const reader = new FileReader();
       reader.readAsDataURL(preview.file);
       reader.onloadend = () => {
-        onCapture(preview.file, reader.result as string, gpsLocation);
+        onCapture(preview.file, reader.result as string, gpsLocation, timestamp);
         setIsUploading(false);
       };
       return;

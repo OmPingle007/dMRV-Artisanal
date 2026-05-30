@@ -521,7 +521,7 @@ export function AuditorDashboard() {
                                     <div className="flex items-center gap-1.5 opacity-90 border-l border-white/20 pl-3">
                                       <Clock className="w-3 h-3 text-blue-400" />
                                       <span className="text-[9px] font-mono font-bold">
-                                        12:34:56 UTC
+                                        {selectedBatch.media?.[`${step}_timestamp`] || selectedBatch.media?.timestamp || "No Timestamp"}
                                       </span>
                                     </div>
                                   </div>
