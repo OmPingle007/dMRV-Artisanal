@@ -30,14 +30,13 @@ export function ManagementDashboard() {
   const [funnelData, setFunnelData] = useState([
     { name: "S0: CREATED", value: 214, fill: "#e2e8f0" },
     { name: "S1: MOISTURE", value: 200, fill: "#cbd5e1" },
-    { name: "S2: PRE-BURN", value: 180, fill: "#94a3b8" },
-    { name: "S3: 50% BURN", value: 175, fill: "#64748b" },
-    { name: "S4: TEMP", value: 160, fill: "#475569" },
-    { name: "S5: 90% BURN", value: 155, fill: "#334155" },
-    { name: "S6: QUENCH", value: 150, fill: "#1e293b" },
-    { name: "S7: FINAL WT", value: 145, fill: "#0f172a" },
-    { name: "S8: SPREAD", value: 140, fill: "#052c1a" },
-    { name: "S9: SEALED", value: 130, fill: "#143225" },
+    { name: "S2: PRE-PROCESS", value: 180, fill: "#94a3b8" },
+    { name: "S3: MID-PROCESS", value: 175, fill: "#64748b" },
+    { name: "S4: TEMP CHECK", value: 160, fill: "#475569" },
+    { name: "S5: COMPLETION", value: 155, fill: "#334155" },
+    { name: "S6: COOLING", value: 150, fill: "#1e293b" },
+    { name: "S7: SPREADING", value: 145, fill: "#0f172a" },
+    { name: "S8: SEALING", value: 140, fill: "#052c1a" },
   ]);
 
   const [mapData, setMapData] = useState([
@@ -258,7 +257,6 @@ export function ManagementDashboard() {
           if (steps.includes("S6")) s6++;
           if (steps.includes("S7")) s7++;
           if (steps.includes("S8")) s8++;
-          if (steps.includes("S9")) s9++;
         });
 
         // To make it look like a funnel, sort them if you want or maintain strict step logic
@@ -266,14 +264,13 @@ export function ManagementDashboard() {
         setFunnelData([
           { name: "S0: EMPTY KILN", value: s0, fill: "#e2e8f0" },
           { name: "S1: MOISTURE", value: s1, fill: "#cbd5e1" },
-          { name: "S2: PRE-BURN", value: s2, fill: "#94a3b8" },
-          { name: "S3: 50% BURN", value: s3, fill: "#64748b" },
-          { name: "S4: TEMP", value: s4, fill: "#475569" },
-          { name: "S5: 90% BURN", value: s5, fill: "#334155" },
-          { name: "S6: POST-QUENCH", value: s6, fill: "#1e293b" },
-          { name: "S7: FINAL WT", value: s7, fill: "#0f172a" },
-          { name: "S8: SPREAD", value: s8, fill: "#052c1a" },
-          { name: "S9: SEALED", value: s9, fill: "#143225" },
+          { name: "S2: PRE-PROCESS", value: s2, fill: "#94a3b8" },
+          { name: "S3: MID-PROCESS", value: s3, fill: "#64748b" },
+          { name: "S4: TEMP CHECK", value: s4, fill: "#475569" },
+          { name: "S5: COMPLETION", value: s5, fill: "#334155" },
+          { name: "S6: COOLING", value: s6, fill: "#1e293b" },
+          { name: "S7: SPREADING", value: s7, fill: "#0f172a" },
+          { name: "S8: SEALING", value: s8, fill: "#052c1a" },
         ]);
       }
     } catch (e) {
@@ -843,7 +840,6 @@ export function ManagementDashboard() {
                     "S6",
                     "S7",
                     "S8",
-                    "S9",
                     "LAB",
                   ].map((step, idx) => {
                     const isCompleted = step === 'LAB' ? !!selectedBatch.media?.lab_report : selectedBatch.steps_completed?.includes(step);
@@ -860,14 +856,22 @@ export function ManagementDashboard() {
                             : step === "S1"
                               ? "Moisture Assessment"
                               : step === "S2"
-                                ? "Pre-burn Assembly"
-                                : step === "S4"
-                                  ? "Temperature Logged"
-                                  : step === "S7"
-                                    ? "Final Biochar Weight"
-                                    : step === "LAB"
-                                      ? "Lab Test Report" 
-                                      : `Operation ${step} Completed`}
+                                ? "Kiln Loading"
+                                : step === "S3"
+                                  ? "Active Burn"
+                                  : step === "S4"
+                                    ? "Temperature Logged"
+                                    : step === "S5"
+                                      ? "End of Burn"
+                                      : step === "S6"
+                                        ? "Cooling Process"
+                                        : step === "S7"
+                                          ? "Field Distribution"
+                                          : step === "S8"
+                                            ? "Sample Collection"
+                                            : step === "LAB"
+                                              ? "Lab Test Report" 
+                                              : `Operation ${step} Completed`}
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="bg-slate-100 rounded-lg h-32 flex items-center justify-center border border-slate-200 border-dashed relative overflow-hidden group">

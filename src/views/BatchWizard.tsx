@@ -117,15 +117,14 @@ export function BatchWizard({ batchId, onBack }: BatchWizardProps) {
   };
 
   const steps = [
-    { id: "S1", title: "Feedstock Moisture", req: "3x Readings" },
-    { id: "S2", title: "Pre-Burn Weight", req: "Kiln + Feedstock" },
-    { id: "S3", title: "50% Burn Photo", req: "Visual Flames" },
-    { id: "S4", title: "Surface Temperature", req: "Pyrometer Reading" },
-    { id: "S5", title: "90% Burn Photo", req: "Completion Visual" },
-    { id: "S6", title: "Post-Quench", req: "Steam/Wet Biochar" },
-    { id: "S7", title: "Final Weight", req: "Biochar Weight Photo" },
-    { id: "S8", title: "Distribution", req: "Field Spreading" },
-    { id: "S9", title: "Sample Seal", req: "Tamper-bag + ID" },
+    { id: "S1", title: "Moisture Check", req: "Moisture Readings" },
+    { id: "S2", title: "Pre-Process Photo", req: "Kiln Loading" },
+    { id: "S3", title: "Mid-Process Photo", req: "Active Burn" },
+    { id: "S4", title: "Temperature Check", req: "Pyrometer Reading" },
+    { id: "S5", title: "Near-Completion Photo", req: "End of Burn" },
+    { id: "S6", title: "Cooling Process", req: "Quenching / Cooling" },
+    { id: "S7", title: "Field Distribution", req: "Spreading Biochar" },
+    { id: "S8", title: "Sample Collection", req: "Sealing & ID" },
   ];
 
   // --- Handlers ---

@@ -438,7 +438,6 @@ export function AuditorDashboard() {
                       "S6",
                       "S7",
                       "S8",
-                      "S9",
                       "LAB",
                     ].map((step, idx) => {
                       const isCompleted = step === 'LAB' ? !!selectedBatch.media?.lab_report : selectedBatch.steps_completed?.includes(step);
@@ -453,13 +452,25 @@ export function AuditorDashboard() {
                               <h4 className="text-sm font-bold text-slate-800 uppercase tracking-widest mb-4">
                                 {step === "S0"
                                   ? "Empty Kiln Initialized"
-                                  : step === "S4"
-                                    ? "Temperature Logged"
-                                    : step === "S7"
-                                      ? "Final Biochar Weight"
-                                      : step === "LAB"
-                                        ? "Lab Test Report"
-                                        : `Operation Evidence - ${step}`}
+                                  : step === "S1"
+                                    ? "Moisture Assessment"
+                                    : step === "S2"
+                                      ? "Kiln Loading"
+                                      : step === "S3"
+                                        ? "Active Burn"
+                                        : step === "S4"
+                                          ? "Temperature Logged"
+                                          : step === "S5"
+                                            ? "End of Burn"
+                                            : step === "S6"
+                                              ? "Cooling Process"
+                                              : step === "S7"
+                                                ? "Field Distribution"
+                                                : step === "S8"
+                                                  ? "Sample Collection"
+                                                  : step === "LAB"
+                                                    ? "Lab Test Report"
+                                                    : `Operation Evidence - ${step}`}
                               </h4>
 
                               <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 flex gap-6">
